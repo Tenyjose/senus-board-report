@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.models.company import Company
@@ -6,6 +7,7 @@ from app.models.income_statement import IncomeStatement
 from app.models.balance_sheet import BalanceSheet
 from app.models.cash_flow import CashFlow
 from app.models.customer_metrics import CustomerMetrics
+from app.models.extraction_log import ExtractionLog
 
 SENUS_COMPANY_NAME = "Senus PLC"
 SENUS_TICKER = "SENUS"
@@ -42,8 +44,33 @@ def get_or_create_reporting_period(session: Session, company: Company, period_da
     return period
 
 
-def save_income_statement(session: Session, company: Company, period_data: dict) -> IncomeStatement:
+def save_extraction_log(session: Session, period: ReportingPeriod, source_doc: str) -> ExtractionLog:
+    """
+    Record that an extraction happened for this period, from this source
+    document. One entry per (period, source_doc) pair - re-running the
+    same extraction shouldn't pile up duplicate log rows for what's
+    really one logical event.
+    """
+    existing = (
+        session.query(ExtractionLog)
+        .filter_by(period_id=period.id, source_doc=source_doc)
+        .first()
+    )
+    if existing:
+        return existing
+
+    log_entry = ExtractionLog(
+        period_id=period.id,
+        source_doc=source_doc,
+        extracted_at=datetime.now(timezone.utc),
+    )
+    session.add(log_entry)
+    return log_entry
+
+
+def save_income_statement(session: Session, company: Company, period_data: dict, source_doc: str) -> IncomeStatement:
     period = get_or_create_reporting_period(session, company, period_data)
+    save_extraction_log(session, period, source_doc)
 
     existing = session.query(IncomeStatement).filter_by(period_id=period.id).first()
     if existing:
@@ -61,9 +88,9 @@ def save_income_statement(session: Session, company: Company, period_data: dict)
     return income_statement
 
 
-
-def save_balance_sheet(session: Session, company: Company, period_data: dict) -> BalanceSheet:
+def save_balance_sheet(session: Session, company: Company, period_data: dict, source_doc: str) -> BalanceSheet:
     period = get_or_create_reporting_period(session, company, period_data)
+    save_extraction_log(session, period, source_doc)
 
     existing = session.query(BalanceSheet).filter_by(period_id=period.id).first()
     if existing:
@@ -86,8 +113,9 @@ def save_balance_sheet(session: Session, company: Company, period_data: dict) ->
     return balance_sheet
 
 
-def save_cash_flow(session: Session, company: Company, period_data: dict) -> CashFlow:
+def save_cash_flow(session: Session, company: Company, period_data: dict, source_doc: str) -> CashFlow:
     period = get_or_create_reporting_period(session, company, period_data)
+    save_extraction_log(session, period, source_doc)
 
     existing = session.query(CashFlow).filter_by(period_id=period.id).first()
     if existing:
@@ -105,9 +133,9 @@ def save_cash_flow(session: Session, company: Company, period_data: dict) -> Cas
     return cash_flow
 
 
-
-def save_customer_metrics(session: Session, company: Company, period_data: dict) -> CustomerMetrics:
+def save_customer_metrics(session: Session, company: Company, period_data: dict, source_doc: str) -> CustomerMetrics:
     period = get_or_create_reporting_period(session, company, period_data)
+    save_extraction_log(session, period, source_doc)
 
     existing = session.query(CustomerMetrics).filter_by(period_id=period.id).first()
     if existing:
@@ -121,7 +149,7 @@ def save_customer_metrics(session: Session, company: Company, period_data: dict)
     customer_metrics = CustomerMetrics(
         period_id=period.id,
         total_customers=period_data.get("total_customer_accounts"),
-        enterprise_pct=None,  
+        enterprise_pct=None,
         new_deals_closed_value=total_new_deals_value,
         open_pipeline_value=period_data.get("open_pipeline_value"),
         notable_commercial_events=period_data.get("notable_commercial_events", []),
