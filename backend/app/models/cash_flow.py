@@ -12,5 +12,7 @@ class CashFlow(Base):
     operating_cf = Column(Numeric(14, 2))
     investing_cf = Column(Numeric(14, 2))
     financing_cf = Column(Numeric(14, 2))
+    cash_at_start = Column(Numeric(14, 2))
+    cash_at_end = Column(Numeric(14, 2))
 
     period = relationship("ReportingPeriod")
