@@ -44,16 +44,18 @@ Extract figures from the attached financial statement PDF.
 
 Return ONLY a valid JSON object - no explanation, no markdown, no code fences.
 
+Context: this company's fiscal year runs from 1 July to 30 June.
+
 Extract the Balance Sheet figures for BOTH periods shown. Use this exact \
 structure:
 
 {
   "periods": [
     {
-      "label": "<short display label, e.g. FY2025 or HY2026>",
-      "period_start_date": "<YYYY-MM-DD, based on the period described in the document heading>",
+      "label": "<short display label, see rules below>",
+      "period_start_date": "<YYYY-MM-DD>",
       "period_end_date": "<YYYY-MM-DD>",
-      "period_type": "full_year" or "half_year",
+      "period_type": "full_year", "half_year", or "snapshot",
       "fixed_assets": <number>,
       "current_assets": <number>,
       "creditors_due_within_one_year": <number>,
@@ -69,15 +71,25 @@ structure:
 }
 
 Rules:
-- Include one object per period shown in the document (usually two).
-- A balance sheet is normally described as "as at" a single date, not a \
-date range - in that case, set period_start_date to the first day of that \
-fiscal year and period_end_date to the "as at" date itself.
+- Include one object per period shown in the document (this may be one or two).
+- A balance sheet is described as "as at" a single date. Determine which \
+kind of period it represents:
+  - If the "as at" date is exactly the fiscal year end (30 June), this is \
+period_type "full_year": period_start_date is 1 July of the prior calendar \
+year, period_end_date is the "as at" date, label is "FY<year>".
+  - If the "as at" date is exactly 31 December (the mid-point of the fiscal \
+year), this is period_type "half_year": period_start_date is 1 July of that \
+same calendar year, period_end_date is the "as at" date, label is "HY<year+1>".
+  - If the "as at" date does NOT match either of those (e.g. a one-off \
+snapshot for a listing or other event), this is period_type "snapshot": \
+set BOTH period_start_date and period_end_date to the "as at" date itself, \
+and label as "Snapshot <DD-Mon-YYYY>".
 - Use plain numbers only: no currency symbols, no commas, no text.
 - Liabilities and deficits must be negative numbers.
 - If a figure is genuinely not present in the document, use null. \
 Never guess or invent a number.
 - Match figures to the correct period exactly as labelled in the document."""
+
 
 
 CASH_FLOW_PROMPT = """You are a financial data extraction tool. \
