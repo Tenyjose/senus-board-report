@@ -1,34 +1,28 @@
 import sys
 sys.path.append("backend")
 
-from app.services.pdf_splitter import extract_pages
-from app.services.extractor import extract_financials
-from app.services.prompts import BALANCE_SHEET_PROMPT
 from app.core.database import SessionLocal
-from app.services.db_writer import get_or_create_company, save_balance_sheet
-from app.models.balance_sheet import BalanceSheet
-
-pdf_bytes = extract_pages(
-    "docs/source_documents/senus_balance_sheet.pdf",
-    page_indices=[5]
-)
-
-result = extract_financials(pdf_bytes, BALANCE_SHEET_PROMPT)
-print("Extracted:", result)
+from app.services.db_writer import get_or_create_company
+from app.services.metrics import get_periods_for_company, calculate_revenue_growth_pct
+from app.models.income_statement import IncomeStatement
 
 session = SessionLocal()
 try:
     company = get_or_create_company(session)
-    for period_data in result["periods"]:
-        save_balance_sheet(session, company, period_data)
-    session.commit()
-    print("Saved successfully.")
+    periods = get_periods_for_company(session, company.id)
 
-    print("\n--- What's actually in the database ---")
-    for row in session.query(BalanceSheet).all():
-        print(row.period.label, row.fixed_assets, row.net_current_assets, row.total_equity)
-except Exception:
-    session.rollback()
-    raise
+    for p in periods:
+        stmt = session.query(IncomeStatement).filter_by(period_id=p.id).first()
+        revenue = stmt.revenue if stmt else None
+        print(f"{p.label} ({p.start_date} to {p.end_date}): revenue = {revenue}")
+
+    fy2025 = next(p for p in periods if p.label == "FY2025")
+    fy2024 = next(p for p in periods if p.label == "FY2024")
+
+    stmt_2025 = session.query(IncomeStatement).filter_by(period_id=fy2025.id).first()
+    stmt_2024 = session.query(IncomeStatement).filter_by(period_id=fy2024.id).first()
+
+    growth = calculate_revenue_growth_pct(stmt_2025, stmt_2024)
+    print(f"\nFY2025 vs FY2024 revenue growth: {growth}%")
 finally:
     session.close()
