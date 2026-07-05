@@ -5,6 +5,7 @@ from app.models.reporting_period import ReportingPeriod
 from app.models.income_statement import IncomeStatement
 from app.models.balance_sheet import BalanceSheet
 from app.models.cash_flow import CashFlow
+from app.models.customer_metrics import CustomerMetrics
 
 SENUS_COMPANY_NAME = "Senus PLC"
 SENUS_TICKER = "SENUS"
@@ -102,3 +103,28 @@ def save_cash_flow(session: Session, company: Company, period_data: dict) -> Cas
     )
     session.add(cash_flow)
     return cash_flow
+
+
+
+def save_customer_metrics(session: Session, company: Company, period_data: dict) -> CustomerMetrics:
+    period = get_or_create_reporting_period(session, company, period_data)
+
+    existing = session.query(CustomerMetrics).filter_by(period_id=period.id).first()
+    if existing:
+        return existing
+
+    total_new_deals_value = sum(
+        batch["combined_value"] or 0
+        for batch in period_data.get("deal_batches_mentioned", [])
+    )
+
+    customer_metrics = CustomerMetrics(
+        period_id=period.id,
+        total_customers=period_data.get("total_customer_accounts"),
+        enterprise_pct=None,  
+        new_deals_closed_value=total_new_deals_value,
+        open_pipeline_value=period_data.get("open_pipeline_value"),
+        notable_commercial_events=period_data.get("notable_commercial_events", []),
+    )
+    session.add(customer_metrics)
+    return customer_metrics

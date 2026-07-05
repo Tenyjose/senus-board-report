@@ -126,6 +126,10 @@ Return ONLY a valid JSON object - no explanation, no markdown, no code fences.
 Use this exact structure:
 
 {
+  "label": "<short display label for the period this commentary describes, e.g. HY2026>",
+  "period_start_date": "<YYYY-MM-DD>",
+  "period_end_date": "<YYYY-MM-DD>",
+  "period_type": "full_year" or "half_year",
   "revenue_growth_pct": <number or null>,
   "gross_margin_pct": <number or null>,
   "total_customer_accounts": <number or null, ONLY if the document states an \
@@ -143,6 +147,8 @@ overall/total customer count - not a subset involved in one deal batch>,
 }
 
 Rules:
+- The period fields describe the CURRENT/most recent period covered by the \
+document's narrative, not a prior comparison period.
 - Percentages as plain numbers (e.g. 4.1, not "4.1%" or 0.041).
 - Monetary values as plain numbers in the document's base currency unit \
 (e.g. if the document says "€700k", return 700000).

@@ -3,27 +3,26 @@ sys.path.append("backend")
 
 from app.core.database import SessionLocal
 from app.services.extractor import extract_financials
-from app.services.prompts import CASH_FLOW_PROMPT
-from app.services.db_writer import get_or_create_company, save_cash_flow
-from app.models.cash_flow import CashFlow
+from app.services.prompts import GROWTH_METRICS_PROMPT
+from app.services.db_writer import get_or_create_company, save_customer_metrics
+from app.models.customer_metrics import CustomerMetrics
 
 with open("docs/source_documents/half_year_results.pdf", "rb") as f:
     pdf_bytes = f.read()
 
-result = extract_financials(pdf_bytes, CASH_FLOW_PROMPT)
+result = extract_financials(pdf_bytes, GROWTH_METRICS_PROMPT)
 print("Extracted:", result)
 
 session = SessionLocal()
 try:
     company = get_or_create_company(session)
-    for period_data in result["periods"]:
-        save_cash_flow(session, company, period_data)
+    save_customer_metrics(session, company, result)
     session.commit()
     print("Saved successfully.")
 
     print("\n--- What's actually in the database ---")
-    for row in session.query(CashFlow).all():
-        print(row.period.label, row.operating_cf, row.cash_at_start, row.cash_at_end)
+    for row in session.query(CustomerMetrics).all():
+        print(row.period.label, row.total_customers, row.new_deals_closed_value, row.open_pipeline_value, row.notable_commercial_events)
 except Exception:
     session.rollback()
     raise
