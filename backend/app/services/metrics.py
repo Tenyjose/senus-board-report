@@ -36,3 +36,21 @@ def calculate_ebitda(operating_result, depreciation, amortisation=0) -> float | 
     dep = depreciation or 0
     amort = amortisation or 0
     return round(float(operating_result) + float(dep) + float(amort), 2)
+
+
+def calculate_gross_margin_pct(gross_profit, revenue) -> float | None:
+    if not revenue or revenue == 0 or gross_profit is None:
+        return None
+    return round(float(gross_profit) / float(revenue) * 100, 2)
+
+
+def calculate_operating_margin_pct(operating_result, revenue) -> float | None:
+    if not revenue or revenue == 0 or operating_result is None:
+        return None
+    return round(float(operating_result) / float(revenue) * 100, 2)
+
+
+def calculate_ebitda_margin_pct(ebitda, revenue) -> float | None:
+    if not revenue or revenue == 0 or ebitda is None:
+        return None
+    return round(float(ebitda) / float(revenue) * 100, 2)
