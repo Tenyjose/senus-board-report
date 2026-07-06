@@ -75,6 +75,7 @@ def build_period_metrics(db: Session, period_id: int) -> dict | None:
             "label": period.label,
             "start_date": period.start_date,
             "end_date": period.end_date,
+            "period_type": period.period_type,
         },
         "compared_to": prior_period.label if prior_period else None,
         "growth_and_revenue": {
