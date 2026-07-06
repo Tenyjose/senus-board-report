@@ -128,6 +128,7 @@ def save_cash_flow(session: Session, company: Company, period_data: dict, source
         financing_cf=period_data["net_cash_from_financing"],
         cash_at_start=period_data["cash_at_start"],
         cash_at_end=period_data["cash_at_end"],
+        depreciation=period_data.get("depreciation"),
     )
     session.add(cash_flow)
     return cash_flow

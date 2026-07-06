@@ -14,5 +14,6 @@ class CashFlow(Base):
     financing_cf = Column(Numeric(14, 2))
     cash_at_start = Column(Numeric(14, 2))
     cash_at_end = Column(Numeric(14, 2))
+    depreciation = Column(Numeric(14, 2))
 
     period = relationship("ReportingPeriod")

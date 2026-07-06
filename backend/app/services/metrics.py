@@ -27,3 +27,12 @@ def calculate_revenue_growth_pct(current: IncomeStatement, prior: IncomeStatemen
 
     growth = (current.revenue - prior.revenue) / prior.revenue * 100
     return round(float(growth), 2)
+
+
+def calculate_ebitda(operating_result, depreciation, amortisation=0) -> float | None:
+    if operating_result is None:
+        return None
+
+    dep = depreciation or 0
+    amort = amortisation or 0
+    return round(float(operating_result) + float(dep) + float(amort), 2)

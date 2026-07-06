@@ -104,29 +104,31 @@ exact structure:
   "periods": [
     {
       "label": "<short display label, e.g. FY2025 or HY2026>",
-      "period_start_date": "<YYYY-MM-DD, based on the period described in the document heading>",
+      "period_start_date": "<YYYY-MM-DD>",
       "period_end_date": "<YYYY-MM-DD>",
       "period_type": "full_year" or "half_year",
       "net_cash_from_operating": <number>,
       "net_cash_from_investing": <number>,
       "net_cash_from_financing": <number>,
       "cash_at_start": <number>,
-      "cash_at_end": <number>
+      "cash_at_end": <number>,
+      "depreciation": <number>
     }
   ]
 }
 
 Rules:
 - Include one object per period shown in the document (usually two).
+- depreciation is normally found as a line item within the reconciliation \
+of operating activities (e.g. "Depreciation 20,381"). Return it as a \
+positive number, representing the non-cash expense being added back.
 - Determine period_start_date and period_end_date from the document's own \
-heading text, the same way an income statement or cash flow date range \
-is described (e.g. "for the six months ended 31 December 2025").
+heading text.
 - Use plain numbers only: no currency symbols, no commas, no text.
 - Cash outflows must be negative numbers.
 - If a figure is genuinely not present in the document, use null. \
 Never guess or invent a number.
 - Match figures to the correct period exactly as labelled in the document."""
-
 
 GROWTH_METRICS_PROMPT = """You are a financial data extraction tool. \
 Extract growth and commercial metrics from the attached document. This \
