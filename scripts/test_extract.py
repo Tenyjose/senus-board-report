@@ -3,15 +3,9 @@ sys.path.append("backend")
 
 from app.core.database import SessionLocal
 from app.services.db_writer import get_or_create_company
-from app.services.metrics import (
-    get_periods_for_company,
-    calculate_ebitda,
-    calculate_gross_margin_pct,
-    calculate_operating_margin_pct,
-    calculate_ebitda_margin_pct,
-)
+from app.services.metrics import get_periods_for_company, calculate_capital_employed, calculate_roce_pct
 from app.models.income_statement import IncomeStatement
-from app.models.cash_flow import CashFlow
+from app.models.balance_sheet import BalanceSheet
 
 session = SessionLocal()
 try:
@@ -20,19 +14,14 @@ try:
 
     for p in periods:
         income = session.query(IncomeStatement).filter_by(period_id=p.id).first()
-        cash = session.query(CashFlow).filter_by(period_id=p.id).first()
+        balance = session.query(BalanceSheet).filter_by(period_id=p.id).first()
 
-        if income is None:
-            print(f"{p.label}: skipping, no income statement")
+        if income is None or balance is None:
+            print(f"{p.label}: skipping, missing income statement or balance sheet")
             continue
 
-        depreciation = cash.depreciation if cash else None
-        ebitda = calculate_ebitda(income.operating_loss, depreciation)
-
-        gross_margin = calculate_gross_margin_pct(income.gross_profit, income.revenue)
-        operating_margin = calculate_operating_margin_pct(income.operating_loss, income.revenue)
-        ebitda_margin = calculate_ebitda_margin_pct(ebitda, income.revenue)
-
-        print(f"{p.label}: Gross Margin = {gross_margin}%, Operating Margin = {operating_margin}%, EBITDA Margin = {ebitda_margin}%")
+        capital_employed = calculate_capital_employed(balance.fixed_assets, balance.net_current_assets)
+        roce = calculate_roce_pct(income.operating_loss, capital_employed)
+        print(f"{p.label}: Capital Employed = {capital_employed}, ROCE = {roce}%")
 finally:
     session.close()
