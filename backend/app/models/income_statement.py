@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, Integer, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -15,5 +14,6 @@ class IncomeStatement(Base):
     gross_profit = Column(Numeric(14, 2))
     operating_loss = Column(Numeric(14, 2))
     net_loss = Column(Numeric(14, 2))
+    interest_expense = Column(Numeric(14, 2))
 
     period = relationship("ReportingPeriod")

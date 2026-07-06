@@ -114,3 +114,17 @@ def calculate_roce_pct(operating_result, capital_employed) -> float | None:
     if operating_result is None or not capital_employed or capital_employed == 0:
         return None
     return round(float(operating_result) / float(capital_employed) * 100, 2)
+
+
+
+def calculate_dscr(ebitda, interest_expense, principal_due_within_one_year) -> float | None:
+    if ebitda is None or interest_expense is None:
+        return None
+    if not principal_due_within_one_year or principal_due_within_one_year == 0:
+        return None
+
+    debt_service = abs(float(interest_expense)) + float(principal_due_within_one_year)
+    if debt_service == 0:
+        return None
+
+    return round(float(ebitda) / debt_service, 2)

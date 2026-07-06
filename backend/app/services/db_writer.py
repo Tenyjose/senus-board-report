@@ -45,12 +45,6 @@ def get_or_create_reporting_period(session: Session, company: Company, period_da
 
 
 def save_extraction_log(session: Session, period: ReportingPeriod, source_doc: str) -> ExtractionLog:
-    """
-    Record that an extraction happened for this period, from this source
-    document. One entry per (period, source_doc) pair - re-running the
-    same extraction shouldn't pile up duplicate log rows for what's
-    really one logical event.
-    """
     existing = (
         session.query(ExtractionLog)
         .filter_by(period_id=period.id, source_doc=source_doc)
@@ -82,6 +76,7 @@ def save_income_statement(session: Session, company: Company, period_data: dict,
         cost_of_sales=period_data["cost_of_sales"],
         gross_profit=period_data["gross_profit"],
         operating_loss=period_data["operating_loss"],
+        interest_expense=period_data.get("interest_expense"),
         net_loss=period_data["net_loss"],
     )
     session.add(income_statement)
@@ -157,3 +152,22 @@ def save_customer_metrics(session: Session, company: Company, period_data: dict,
     )
     session.add(customer_metrics)
     return customer_metrics
+
+
+def update_balance_sheet_loan_schedule(session: Session, as_at_date, principal_due_within_one_year) -> BalanceSheet | None:
+    period = (
+        session.query(ReportingPeriod)
+        .filter_by(end_date=as_at_date)
+        .first()
+    )
+    if period is None:
+        print(f"No reporting period found ending {as_at_date} - cannot attach loan schedule")
+        return None
+
+    balance_sheet = session.query(BalanceSheet).filter_by(period_id=period.id).first()
+    if balance_sheet is None:
+        print(f"No balance sheet found for period ending {as_at_date}")
+        return None
+
+    balance_sheet.principal_due_within_one_year = principal_due_within_one_year
+    return balance_sheet

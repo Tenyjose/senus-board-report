@@ -10,13 +10,14 @@ Use this exact structure:
   "periods": [
     {
       "label": "<short display label, e.g. FY2025 or HY2026>",
-      "period_start_date": "<YYYY-MM-DD, based on the period described in the document heading>",
+      "period_start_date": "<YYYY-MM-DD>",
       "period_end_date": "<YYYY-MM-DD>",
       "period_type": "full_year" or "half_year",
       "revenue": <number>,
       "cost_of_sales": <number>,
       "gross_profit": <number>,
       "operating_loss": <number>,
+      "interest_expense": <number>,
       "net_loss": <number>
     }
   ]
@@ -24,16 +25,14 @@ Use this exact structure:
 
 Rules:
 - Include one object per period shown in the document (usually two).
+- interest_expense is normally labelled "Interest payable and similar \
+expenses" - return it as a negative number, representing an expense.
 - Determine period_start_date and period_end_date from the document's own \
-heading text (e.g. "for the financial year ended 30 June 2025" means \
-period_start_date is 2024-07-01 and period_end_date is 2025-06-30; \
-"for the six months ended 31 December 2025" means period_start_date is \
-2025-07-01 and period_end_date is 2025-12-31).
+heading text.
 - Use plain numbers only: no currency symbols, no commas, no text.
-- cost_of_sales must always be returned as a negative number, representing \
-a reduction from revenue, regardless of whether the source document shows \
-it as positive or in brackets.
-- All other losses and negative figures must be negative numbers (e.g. -590256).
+- cost_of_sales must always be returned as a negative number, regardless \
+of whether the source document shows it as positive or in brackets.
+- All other losses and negative figures must be negative numbers.
 - If a figure is genuinely not present in the document, use null. \
 Never guess or invent a number.
 - Match figures to the correct period exactly as labelled in the document."""
@@ -172,3 +171,25 @@ of deals described in the text, even if they overlap in time period.
 named events only, not general commentary or opinions.
 - If a figure is genuinely not present in the document, use null or an \
 empty list. Never guess or invent a number."""
+
+
+
+LOAN_SCHEDULE_PROMPT = """You are a financial data extraction tool. \
+Extract the loan repayment schedule from the attached notes page.
+
+Return ONLY a valid JSON object - no explanation, no markdown, no code fences.
+
+Use this exact structure:
+
+{
+  "as_at_date": "<YYYY-MM-DD, the balance sheet date this note relates to>",
+  "principal_due_within_one_year": <number>
+}
+
+Rules:
+- principal_due_within_one_year is the amount of loan principal shown as \
+"repayable in one year or less, or on demand" in the loan repayment \
+breakdown table - NOT the total loan balance.
+- Return it as a positive number, representing an amount owed.
+- If the figure is genuinely not present in the document, use null. \
+Never guess or invent a number."""

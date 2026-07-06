@@ -9,7 +9,6 @@ class BalanceSheet(Base):
 
     id = Column(Integer, primary_key=True)
     period_id = Column(Integer, ForeignKey("reporting_periods.id"), nullable=False)
-
     fixed_assets = Column(Numeric(14, 2))
     current_assets = Column(Numeric(14, 2))
     creditors_due_within_one_year = Column(Numeric(14, 2))
@@ -20,5 +19,6 @@ class BalanceSheet(Base):
     share_premium = Column(Numeric(14, 2))
     retained_earnings = Column(Numeric(14, 2))
     total_equity = Column(Numeric(14, 2))
+    principal_due_within_one_year = Column(Numeric(14, 2))
 
     period = relationship("ReportingPeriod")
