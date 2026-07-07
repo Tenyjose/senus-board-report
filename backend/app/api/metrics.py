@@ -6,6 +6,7 @@ from app.models.reporting_period import ReportingPeriod
 from app.models.income_statement import IncomeStatement
 from app.models.balance_sheet import BalanceSheet
 from app.models.cash_flow import CashFlow
+from app.models.customer_metrics import CustomerMetrics
 from app.services.metrics import (
     calculate_revenue_growth_pct,
     calculate_ebitda,
@@ -44,11 +45,6 @@ def get_prior_period(db: Session, period: ReportingPeriod) -> ReportingPeriod | 
 
 
 def build_period_metrics(db: Session, period_id: int) -> dict | None:
-    """
-    The actual metrics-calculation logic, kept separate from the route
-    itself so other parts of the app (like the insights endpoint) can
-    reuse it without making a second HTTP call to our own API.
-    """
     period = db.query(ReportingPeriod).filter_by(id=period_id).first()
     if period is None:
         return None
@@ -68,6 +64,25 @@ def build_period_metrics(db: Session, period_id: int) -> dict | None:
         calculate_capital_employed(balance.fixed_assets, balance.net_current_assets)
         if balance else None
     )
+
+    customer_metrics = db.query(CustomerMetrics).filter_by(period_id=period.id).first()
+
+    # Full balance sheet detail, used mainly by snapshot-type periods which
+    # have no income statement or cash flow to show in the standard ledger.
+    balance_sheet_detail = None
+    if balance:
+        balance_sheet_detail = {
+            "fixed_assets": balance.fixed_assets,
+            "current_assets": balance.current_assets,
+            "creditors_due_within_one_year": balance.creditors_due_within_one_year,
+            "net_current_assets": balance.net_current_assets,
+            "creditors_due_after_one_year": balance.creditors_due_after_one_year,
+            "net_assets": balance.net_assets,
+            "share_capital": balance.share_capital,
+            "share_premium": balance.share_premium,
+            "retained_earnings": balance.retained_earnings,
+            "total_equity": balance.total_equity,
+        }
 
     return {
         "period": {
@@ -115,6 +130,13 @@ def build_period_metrics(db: Session, period_id: int) -> dict | None:
                 if income else None
             ),
         },
+        "growth_metrics": {
+            "total_customer_accounts": customer_metrics.total_customers if customer_metrics else None,
+            "new_deals_closed_value": customer_metrics.new_deals_closed_value if customer_metrics else None,
+            "open_pipeline_value": customer_metrics.open_pipeline_value if customer_metrics else None,
+            "notable_commercial_events": customer_metrics.notable_commercial_events if customer_metrics else [],
+        },
+        "balance_sheet_detail": balance_sheet_detail,
     }
 
 
