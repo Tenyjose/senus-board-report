@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import './index.css'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL
 const COLORS = { brass: '#B8935A', rust: '#A8503C', sage: '#6E8B74' }
 
 function App() {
@@ -15,7 +16,7 @@ function App() {
   const [chartData, setChartData] = useState([])
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/periods/')
+    fetch(`${API_BASE}/periods/`)
       .then((r) => r.json())
       .then((data) => {
         setPeriods(data)
@@ -28,11 +29,11 @@ function App() {
     setMetrics(null)
     setInsights(null)
 
-    fetch(`http://127.0.0.1:8000/periods/${selectedPeriodId}/metrics`)
+    fetch(`${API_BASE}/periods/${selectedPeriodId}/metrics`)
       .then((r) => r.json())
       .then(setMetrics)
 
-    fetch(`http://127.0.0.1:8000/periods/${selectedPeriodId}/insights`)
+    fetch(`${API_BASE}/periods/${selectedPeriodId}/insights`)
       .then((r) => r.json())
       .then((data) => setInsights(data.commentary))
   }, [selectedPeriodId])
@@ -41,7 +42,7 @@ function App() {
     if (periods.length === 0) return
     Promise.all(
       periods.map((p) =>
-        fetch(`http://127.0.0.1:8000/periods/${p.id}/metrics`).then((r) => r.json())
+        fetch(`${API_BASE}/periods/${p.id}/metrics`).then((r) => r.json())
       )
     ).then((all) => {
       const withRevenue = all
@@ -62,6 +63,11 @@ function App() {
     return { text: `${v}%`, cls: v >= 0 ? 'value-positive' : 'value-negative' }
   }
 
+  const formatCount = (v) => {
+    if (v === null || v === undefined) return { text: 'N/A', cls: 'value-na' }
+    return { text: v, cls: 'value-positive' }
+  }
+
   const Row = ({ label, value }) => (
     <tr>
       <td>{label}</td>
@@ -69,11 +75,25 @@ function App() {
     </tr>
   )
 
+  const hasGrowthData = metrics && metrics.growth_metrics && (
+    metrics.growth_metrics.total_customer_accounts !== null ||
+    metrics.growth_metrics.new_deals_closed_value !== null ||
+    metrics.growth_metrics.open_pipeline_value !== null ||
+    metrics.growth_metrics.notable_commercial_events.length > 0
+  )
+
+  const isSnapshot = metrics && metrics.period.period_type === 'snapshot'
+
   return (
     <div className="report">
       <div className="report-header">
         <h1>Senus PLC</h1>
-        <p>Board Report — Natural Capital Management Software</p>
+        <p className="report-subtitle">
+          Board Report{metrics ? ` — ${metrics.period.label}` : ''}
+        </p>
+        <p className="report-caption">
+          Natural Capital Management Software · Euronext Access Dublin
+        </p>
       </div>
 
       <div className="period-nav">
@@ -90,7 +110,32 @@ function App() {
 
       {!metrics && <p className="loading-text">Loading...</p>}
 
-      {metrics && (
+      {metrics && isSnapshot && metrics.balance_sheet_detail && (
+        <div className="panel">
+          <h2>{metrics.period.label} — Financial Position</h2>
+          <p className="report-caption" style={{ marginBottom: '20px' }}>
+            One-off balance sheet prepared ahead of the Euronext Access Dublin
+            direct listing on 22 December 2025. No income statement or cash
+            flow statement was disclosed for this snapshot.
+          </p>
+          <table className="ledger">
+            <tbody>
+              <Row label="Fixed Assets" value={formatCurrency(metrics.balance_sheet_detail.fixed_assets)} />
+              <Row label="Current Assets" value={formatCurrency(metrics.balance_sheet_detail.current_assets)} />
+              <Row label="Creditors (within one year)" value={formatCurrency(metrics.balance_sheet_detail.creditors_due_within_one_year)} />
+              <Row label="Net Current Assets (Working Capital)" value={formatCurrency(metrics.balance_sheet_detail.net_current_assets)} />
+              <Row label="Creditors (after one year)" value={formatCurrency(metrics.balance_sheet_detail.creditors_due_after_one_year)} />
+              <Row label="Net Assets" value={formatCurrency(metrics.balance_sheet_detail.net_assets)} />
+              <Row label="Share Capital" value={formatCurrency(metrics.balance_sheet_detail.share_capital)} />
+              <Row label="Share Premium" value={formatCurrency(metrics.balance_sheet_detail.share_premium)} />
+              <Row label="Retained Earnings" value={formatCurrency(metrics.balance_sheet_detail.retained_earnings)} />
+              <Row label="Total Equity" value={formatCurrency(metrics.balance_sheet_detail.total_equity)} />
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {metrics && !isSnapshot && (
         <div className="panel">
           <h2>{metrics.period.label}</h2>
           <table className="ledger">
@@ -113,9 +158,35 @@ function App() {
         </div>
       )}
 
+      {hasGrowthData && (
+        <div className="panel">
+          <h2>Growth & Commercial Activity</h2>
+          <table className="ledger">
+            <tbody>
+              <Row label="Total Customer Accounts" value={formatCount(metrics.growth_metrics.total_customer_accounts)} />
+              <Row label="New Deals Closed" value={formatCurrency(metrics.growth_metrics.new_deals_closed_value)} />
+              <Row label="Open Pipeline" value={formatCurrency(metrics.growth_metrics.open_pipeline_value)} />
+            </tbody>
+          </table>
+
+          {metrics.growth_metrics.notable_commercial_events.length > 0 && (
+            <div style={{ marginTop: '20px' }}>
+              <p style={{ color: 'var(--parchment-dim)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
+                Notable Commercial Events
+              </p>
+              <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                {metrics.growth_metrics.notable_commercial_events.map((event, i) => (
+                  <li key={i} style={{ marginBottom: '6px', fontSize: '14px' }}>{event}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
       {insights && (
         <div className="panel">
-          <h2>AI Commentary</h2>
+          <h2>AI Summary</h2>
           <p className="commentary">{insights}</p>
         </div>
       )}

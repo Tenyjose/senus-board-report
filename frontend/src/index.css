@@ -39,12 +39,18 @@ body {
   margin: 0 0 4px;
 }
 
-.report-header p {
-  color: var(--parchment-dim);
+.report-subtitle {
+  color: var(--brass);
   margin: 0;
   font-size: 14px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.report-caption {
+  color: var(--parchment-dim);
+  margin: 6px 0 0;
+  font-size: 12px;
 }
 
 .period-nav {
