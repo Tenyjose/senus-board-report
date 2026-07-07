@@ -63,6 +63,12 @@ function App() {
     return { text: `${v}%`, cls: v >= 0 ? 'value-positive' : 'value-negative' }
   }
 
+  const formatAxisValue = (value) => {
+    if (value >= 1000000) return `€${(value / 1000000).toFixed(1)}M`
+    if (value >= 1000) return `€${(value / 1000).toFixed(0)}k`
+    return `€${value}`
+  }
+
   const formatCount = (v) => {
     if (v === null || v === undefined) return { text: 'N/A', cls: 'value-na' }
     return { text: v, cls: 'value-positive' }
@@ -202,7 +208,7 @@ function App() {
             }))}>
               <CartesianGrid stroke="#2A4136" strokeDasharray="3 3" />
               <XAxis dataKey="label" stroke="#A9AFA6" />
-              <YAxis stroke="#A9AFA6" />
+              <YAxis stroke="#A9AFA6" tickFormatter={formatAxisValue} />
               <Tooltip contentStyle={{ background: '#17291F', border: '1px solid #2A4136', color: '#EDE7D9' }} />
               <Legend />
               <Line type="monotone" dataKey="revenue_full_year" stroke={COLORS.brass} strokeWidth={2} dot={{ fill: COLORS.brass }} name="Full Year Revenue" connectNulls={true} />
