@@ -1,11 +1,13 @@
 # Senus Board Report
 
-I built this for Assiduous's technical assignment — an AI-native board report for
+I built this Project for Assiduous's technical assignment - an AI-native board report for
 Senus PLC, a real Irish Natural Capital management company listed on Euronext Access
-Dublin.
+Dublin. This is the full thing, live and deployed.
+
+Some relevant links are added below:
 
 **Live app:** https://senus-board-report-lyart.vercel.app/
-**API:** https://senus-board-report-i7eg.onrender.com/
+**Demo video**: https://youtu.be/U62XmAHfJCQ
 
 
 ## What this actually is
